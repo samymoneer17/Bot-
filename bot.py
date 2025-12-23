@@ -88,7 +88,7 @@ logger.setLevel(logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("telegram").setLevel(logging.WARNING)
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+TELEGRAM_TOKEN = '7347090008:AAGTx2R8H6E-H4pGwfLnveJ-HsCM95tI2EM'
 
 MAIN_MENU_TEXT = """
 🔍 *مرحباً بك في OSINT Hunter Bot V5.0*
