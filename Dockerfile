@@ -1,5 +1,5 @@
 # ============================================================================
-# Dockerfile الشامل النهائي - OSINT Hunter Bot
+# Dockerfile الشامل النهائي - OSINT Hunter Bot (متوافق مع Debian 12)
 # ============================================================================
 
 FROM python:3.11-slim
@@ -7,7 +7,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # ============================================================================
-# 1️⃣ تحديث النظام وتثبيت التبعيات الأساسية
+# 1️⃣ تحديث النظام وتثبيت التبعيات الأساسية (بدون software-properties-common)
 # ============================================================================
 
 RUN apt-get update && apt-get upgrade -y && \
@@ -24,7 +24,8 @@ RUN apt-get update && apt-get upgrade -y && \
     vim-tiny \
     unzip \
     jq \
-    software-properties-common \
+    # بديل software-properties-common في Debian 12
+    apt-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # اختبار wget
@@ -60,6 +61,16 @@ RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.1/apktool
 # 4️⃣ تثبيت أدوات تحليل APK الإضافية
 # ============================================================================
 
+# أولاً: إضافة مستودع Android SDK
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    ca-certificates \
+    gnupg \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/android-sdk/debian stable main" > /etc/apt/sources.list.d/android-sdk.list \
+    && apt-get update
+
+# تثبيت Android SDK
 RUN apt-get update && apt-get install -y --no-install-recommends \
     android-sdk-build-tools \
     android-sdk-platform-tools \
@@ -78,7 +89,7 @@ RUN wget https://dl.google.com/android/repository/platform-tools-latest-linux.zi
     rm -rf /tmp/platform-tools*
 
 # ============================================================================
-# 5️⃣ تثبيت أدوات OSINT والأمان (بدون تعليقات داخلية)
+# 5️⃣ تثبيت أدوات OSINT والأمان
 # ============================================================================
 
 RUN apt-get update && \
@@ -109,7 +120,7 @@ RUN cd /tmp && \
     ln -sf /opt/sqlmap/sqlmap.py /usr/local/bin/sqlmap && \
     rm -f sqlmap.zip
 
-# محاولة تثبيت Nikto من GitHub
+# تثبيت Nikto من GitHub (اختياري)
 RUN cd /tmp && \
     wget https://github.com/sullo/nikto/archive/refs/heads/master.zip -O nikto.zip 2>/dev/null || true && \
     if [ -f nikto.zip ]; then \
