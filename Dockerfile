@@ -12,22 +12,18 @@ WORKDIR /app
 
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-    # الأدوات الأساسية
     wget \
     curl \
     git \
     ca-certificates \
     gnupg \
     lsb-release \
-    # دعم اللغة العربية
     locales \
-    # أدوات النظام
     procps \
     nano \
     vim-tiny \
     unzip \
     jq \
-    # إضافة مستودعات إضافية
     software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,15 +39,7 @@ ENV LANG=ar_SA.UTF-8 \
     TZ=Asia/Riyadh
 
 # ============================================================================
-# 2️⃣ إضافة مستودعات Kali Linux للأدوات الأمنية (اختياري)
-# ============================================================================
-
-# إضافة مستودع Kali لأدوات الأمان (إذا كانت متوفرة)
-RUN echo "deb http://http.kali.org/kali kali-rolling main non-free contrib" > /etc/apt/sources.list.d/kali.list 2>/dev/null || true && \
-    wget -q -O - https://archive.kali.org/archive-key.asc | apt-key add - 2>/dev/null || true
-
-# ============================================================================
-# 3️⃣ تثبيت Java (مطلوب لـ Apktool)
+# 2️⃣ تثبيت Java (مطلوب لـ Apktool)
 # ============================================================================
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -60,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================================
-# 4️⃣ تثبيت APKTOOL 2.9.1 (أحدث إصدار)
+# 3️⃣ تثبيت APKTOOL 2.9.1 (أحدث إصدار)
 # ============================================================================
 
 RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.1/apktool_2.9.1.jar -O /usr/local/bin/apktool.jar && \
@@ -69,10 +57,9 @@ RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.1/apktool
     ln -sf /usr/local/bin/apktool /usr/bin/apktool
 
 # ============================================================================
-# 5️⃣ تثبيت أدوات تحليل APK الإضافية
+# 4️⃣ تثبيت أدوات تحليل APK الإضافية
 # ============================================================================
 
-# AAPT2 - من Android SDK الرسمي
 RUN apt-get update && apt-get install -y --no-install-recommends \
     android-sdk-build-tools \
     android-sdk-platform-tools \
@@ -91,23 +78,18 @@ RUN wget https://dl.google.com/android/repository/platform-tools-latest-linux.zi
     rm -rf /tmp/platform-tools*
 
 # ============================================================================
-# 6️⃣ تثبيت أدوات OSINT والأمان (مع إصلاح الحزم المفقودة)
+# 5️⃣ تثبيت أدوات OSINT والأمان (بدون تعليقات داخلية)
 # ============================================================================
 
 RUN apt-get update && \
-    # ✅ الحزم المتوفرة في slim:
     apt-get install -y --no-install-recommends \
-    # أدوات الشبكة والأمان الأساسية
     nmap \
     net-tools \
     iputils-ping \
     dnsutils \
-    # ✅ netcat البديل: netcat-openbsd أو ncat من nmap
     netcat-openbsd \
-    # معالجة الصور
     imagemagick \
     libmagic-dev \
-    # تبعيات Python
     python3-dev \
     build-essential \
     libffi-dev \
@@ -116,11 +98,10 @@ RUN apt-get update && \
     libxslt-dev \
     libjpeg-dev \
     zlib1g-dev \
-    # sudo لإصلاح مشكلة nmap
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# ✅ تثبيت SQLMap من GitHub (بدلاً من apt)
+# تثبيت SQLMap من GitHub
 RUN cd /tmp && \
     wget https://github.com/sqlmapproject/sqlmap/archive/refs/heads/master.zip -O sqlmap.zip && \
     unzip sqlmap.zip && \
@@ -128,40 +109,38 @@ RUN cd /tmp && \
     ln -sf /opt/sqlmap/sqlmap.py /usr/local/bin/sqlmap && \
     rm -f sqlmap.zip
 
-# ✅ Nikto بديل: تثبيت من GitHub إذا لم يتوفر
+# محاولة تثبيت Nikto من GitHub
 RUN cd /tmp && \
-    wget https://github.com/sullo/nikto/archive/refs/heads/master.zip -O nikto.zip 2>/dev/null || \
-    (echo "⚠️  Nikto غير متوفر، سيتم تخطيه" && touch /no_nikto) && \
+    wget https://github.com/sullo/nikto/archive/refs/heads/master.zip -O nikto.zip 2>/dev/null || true && \
     if [ -f nikto.zip ]; then \
         unzip nikto.zip && \
         mv nikto-master /opt/nikto && \
         ln -sf /opt/nikto/program/nikto.pl /usr/local/bin/nikto && \
         rm -f nikto.zip; \
+    else \
+        echo "⚠️  Nikto غير متوفر، سيتم تخطيه" && \
+        touch /no_nikto; \
     fi
 
 # ============================================================================
-# 7️⃣ إصلاح صلاحيات Nmap (حل مشكلة RAW Socket)
+# 6️⃣ إصلاح صلاحيات Nmap
 # ============================================================================
 
-# محاولة إضافة صلاحيات باستخدام setcap
 RUN setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/nmap 2>/dev/null || \
     (echo "⚠️  تحذير: setcap لـ nmap فشل، سيستخدم sudo" && \
      echo "nmap ALL=(ALL) NOPASSWD: /usr/bin/nmap" > /etc/sudoers.d/nmap && \
      chmod 440 /etc/sudoers.d/nmap)
 
-# إضافة صلاحيات ping أيضاً
 RUN setcap cap_net_raw,cap_net_admin+eip /usr/bin/ping 2>/dev/null || true
 
 # ============================================================================
-# 8️⃣ تثبيت مكتبات Python
+# 7️⃣ تثبيت مكتبات Python
 # ============================================================================
 
-# نسخ متطلبات Python أولاً (لتحسين caching)
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt && \
-    # تثبيت مكتبات إضافية لتحليل APK
     pip install --no-cache-dir \
     androguard==3.6.0 \
     apkutils==2.1.1 \
@@ -170,52 +149,40 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pillow==10.0.0
 
 # ============================================================================
-# 9️⃣ نسخ باقي ملفات المشروع
+# 8️⃣ نسخ باقي ملفات المشروع
 # ============================================================================
 
 COPY . .
 
-# إنشاء مجلدات العمل
 RUN mkdir -p /app/{temp,logs,output,apks,data} && \
     chmod -R 777 /app/{temp,logs,output} && \
-    # تنظيف الملفات المؤقتة
     find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true && \
     find . -type f -name "*.pyc" -delete
 
 # ============================================================================
-# 🔟 اختبار جميع الأدوات المثبتة
+# 9️⃣ اختبار جميع الأدوات المثبتة
 # ============================================================================
 
 RUN echo "🔧 ======= اختبار الأدوات المثبتة =======" && \
-    # اختبار wget
     which wget && echo "✅ wget مثبت" && \
-    # اختبار Java
     java -version 2>&1 | head -1 && echo "✅ Java مثبت" && \
-    # اختبار Apktool
     apktool --version 2>/dev/null && echo "✅ Apktool 2.9.1 مثبت" || echo "❌ Apktool غير مثبت" && \
-    # اختبار ADB
     adb version 2>/dev/null | head -1 && echo "✅ ADB مثبت" || echo "⚠️  ADB غير مثبت" && \
-    # اختبار Nmap
     nmap --version 2>/dev/null | head -1 && echo "✅ Nmap مثبت" && \
-    # اختبار netcat
     which nc && echo "✅ netcat-openbsd مثبت" || echo "⚠️  netcat غير مثبت" && \
-    # اختبار SQLMap
     if [ -f /opt/sqlmap/sqlmap.py ]; then \
         echo "✅ SQLMap مثبت (من GitHub)"; \
     else \
         echo "⚠️  SQLMap غير مثبت"; \
     fi && \
-    # اختبار ImageMagick
     convert --version 2>/dev/null | head -1 && echo "✅ ImageMagick مثبت" || echo "❌ ImageMagick غير مثبت" && \
-    # اختبار Python
     python3 --version && echo "✅ Python 3.11 مثبت" && \
-    # اختبار ملفات المشروع
     test -f /app/bot.py && echo "✅ bot.py موجود" || echo "❌ bot.py غير موجود" && \
     test -f /app/main.py && echo "✅ main.py موجود" || echo "❌ main.py غير موجود" && \
     echo "🔧 ======================================="
 
 # ============================================================================
-# 1️⃣1️⃣ متغيرات البيئة
+# 🔟 متغيرات البيئة
 # ============================================================================
 
 ENV APKTOOL_PATH=/usr/local/bin/apktool \
@@ -225,7 +192,7 @@ ENV APKTOOL_PATH=/usr/local/bin/apktool \
     DEBIAN_FRONTEND=noninteractive
 
 # ============================================================================
-# 1️⃣2️⃣ نقطة الدخول
+# 🚀 نقطة الدخول
 # ============================================================================
 
 CMD ["sh", "-c", "\
