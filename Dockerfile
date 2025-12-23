@@ -7,7 +7,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # ============================================================================
-# 1️⃣ تحديث النظام وتثبيت التبعيات الأساسية (بدون software-properties-common)
+# 1️⃣ تحديث النظام وتثبيت التبعيات الأساسية
 # ============================================================================
 
 RUN apt-get update && apt-get upgrade -y && \
@@ -24,8 +24,8 @@ RUN apt-get update && apt-get upgrade -y && \
     vim-tiny \
     unzip \
     jq \
-    # بديل software-properties-common في Debian 12
-    apt-utils \
+    gpg \
+    software-properties-common \
     && rm -rf /var/lib/apt/lists/*
 
 # اختبار wget
@@ -61,13 +61,16 @@ RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.1/apktool
 # 4️⃣ تثبيت أدوات تحليل APK الإضافية
 # ============================================================================
 
-# أولاً: إضافة مستودع Android SDK
+# إضافة مستودع Android SDK (الطريقة الحديثة بدون apt-key)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
+    curl \
     ca-certificates \
     gnupg \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/android-sdk/debian stable main" > /etc/apt/sources.list.d/android-sdk.list \
+    gpg \
+    && mkdir -p /usr/share/keyrings \
+    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-keyring.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-keyring.gpg] http://dl.google.com/linux/android-sdk/debian stable main" > /etc/apt/sources.list.d/android-sdk.list \
     && apt-get update
 
 # تثبيت Android SDK
