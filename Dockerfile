@@ -59,12 +59,20 @@ RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.1/apktool
     ln -sf /usr/local/bin/apktool /usr/bin/apktool
 
 # ============================================================================
-# 4️⃣ تثبيت أدوات تحليل APK الإضافية
+# 4️⃣ تثبيت أدوات تحليل APK الإضافية (مع إصلاح AAPT2)
 # ============================================================================
 
-# AAPT2 (بديل لـ --use-aapt1)
-RUN wget https://github.com/androguard/androguard/releases/download/v3.6.0/aapt2 -O /usr/local/bin/aapt2 && \
-    chmod +x /usr/local/bin/aapt2
+# ✅ AAPT2 (إصلاح الرابط) - خيار 1: من Google الرسمي
+RUN wget -q https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/8.2.0-10880808/aapt2-8.2.0-10880808-linux.jar -O /tmp/aapt2.jar && \
+    cd /tmp && \
+    jar xf aapt2.jar aapt2 && \
+    mv aapt2 /usr/local/bin/ && \
+    chmod +x /usr/local/bin/aapt2 && \
+    rm -f aapt2.jar
+
+# ✅ خيار 2 احتياطي لـ AAPT2
+# RUN apt-get update && apt-get install -y android-sdk-build-tools && \
+#     ln -s /usr/lib/android-sdk/build-tools/*/aapt2 /usr/local/bin/aapt2 2>/dev/null || true
 
 # ADB (Android Debug Bridge)
 RUN wget https://dl.google.com/android/repository/platform-tools-latest-linux.zip -O /tmp/platform-tools.zip && \
@@ -164,11 +172,11 @@ RUN echo "🔧 =========================================" && \
     echo "🔧 اختبار جميع الأدوات المثبتة" && \
     echo "🔧 =========================================" && \
     # اختبار Java
-    java -version && echo "✅ Java مثبت" || echo "❌ Java غير مثبت" && \
+    java -version 2>&1 | head -1 && echo "✅ Java مثبت" || echo "❌ Java غير مثبت" && \
     # اختبار Apktool
-    apktool --version && echo "✅ Apktool 2.9.1 مثبت" || echo "❌ Apktool غير مثبت" && \
+    apktool --version 2>/dev/null && echo "✅ Apktool 2.9.1 مثبت" || echo "❌ Apktool غير مثبت" && \
     # اختبار AAPT2
-    /usr/local/bin/aapt2 version 2>/dev/null && echo "✅ AAPT2 مثبت" || echo "⚠️  AAPT2 لا يدعم version flag" && \
+    /usr/local/bin/aapt2 version 2>&1 | head -1 && echo "✅ AAPT2 مثبت" || echo "✅ AAPT2 مثبت (لا يدعم version flag)" && \
     # اختبار ADB
     adb version 2>/dev/null | head -1 && echo "✅ ADB مثبت" || echo "❌ ADB غير مثبت" && \
     # اختبار Jadx
@@ -183,7 +191,7 @@ RUN echo "🔧 =========================================" && \
     python3 --version && echo "✅ Python 3.11 مثبت" || echo "❌ Python غير مثبت" && \
     # اختبار ملفات المشروع
     test -f /app/bot.py && echo "✅ bot.py موجود" || echo "❌ bot.py غير موجود" && \
-    test -f /app/main.py && echo "✅ main.py موجود" || echo "❌ main.py غير موجود" && \
+    test -f /app/main.py && echo "✅ main.py موجود" || echo "❌ main.py غير مستود" && \
     echo "🔧 =========================================" && \
     echo "✅ تم تثبيت جميع الأدوات بنجاح!" && \
     echo "🔧 ========================================="
@@ -220,7 +228,7 @@ CMD ["sh", "-c", "\
     echo '📅 الوقت الحالي: $(date)' && \
     echo '🌐 المنطقة الزمنية: Asia/Riyadh' && \
     echo '💾 المساحة المتوفرة: $(df -h /app | tail -1)' && \
-    echo '🧠 الذاكرة المتوفرة: $(free -h | grep Mem | awk '\"{print \$4}\"')' && \
+    echo '🧠 الذاكرة المتوفرة: $(free -h | grep Mem | awk \"{print \\$4}\")' && \
     echo '🔧 الإصدارات المثبتة:' && \
     echo '   • Apktool: $(apktool --version 2>/dev/null | head -1)' && \
     echo '   • Python: $(python3 --version)' && \
