@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+.pythonlibs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Results
+results/
+*.csv
+*.json
+!package.json
+
+# Secrets
+.env.local
+.env.*.local
+
+# Temporary files and APK analysis
+temp/
+*.apk
+*.dex
+*.jar
+*.keystore
+*.jks
+*.pem
+*.key
+*.cer
+*.crt
+full_decompile*/
+
+# Cache files
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# Node (for CLI tools)
+node_modules/

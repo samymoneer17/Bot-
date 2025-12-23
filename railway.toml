@@ -1,0 +1,13 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+healthcheckPath = ""
+healthcheckTimeout = 30
+
+[[services]]
+name = "osint-hunter-bot"
+environmentVariables = ["BOT_TOKEN", "ADMIN_IDS"]

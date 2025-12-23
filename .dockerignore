@@ -1,0 +1,83 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.pythonlibs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+temp/
+temp_*
+*.apk
+*.dex
+*.jar
+*.keystore
+*.jks
+*.log
+logs/
+
+# Documentation (optional - remove if you want them in image)
+*.md
+DEPLOYMENT.md
+ARCHITECTURE.md
+RAILWAY_SETUP.md
+README_AR.md
+REVIEW.md
+TOOLS_INFO.md
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+.tox/
+
+# Node (if any)
+node_modules/
+npm-debug.log
+
+# Secrets
+.env
+.env.local
+.env.*.local
+
+# Results
+results/
+*.csv
