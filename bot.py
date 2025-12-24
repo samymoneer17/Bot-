@@ -1383,84 +1383,84 @@ async def dirscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def portscan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
-    if await is_banned(update.effective_user.id): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
+    if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال الهدف\nمثال: `/portscan example.com`", parse_mode='Markdown')
         return
     
     target = context.args[0]
-    await increment_command("portscan")
+    increment_command("portscan")
     msg = await update.message.reply_text(f"🔌 جاري فحص المنافذ: `{target}`...\n⏳ قد يستغرق بعض الوقت...", parse_mode='Markdown')
     
     result = await port_scan(target)
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def waf_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
-    if await is_banned(update.effective_user.id): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
+    if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال الرابط\nمثال: `/waf https://example.com`", parse_mode='Markdown')
         return
     
     url = context.args[0]
-    await increment_command("waf")
+    increment_command("waf")
     msg = await update.message.reply_text(f"🛡️ جاري اكتشاف WAF: `{url}`...", parse_mode='Markdown')
     
     result = await waf_detect(url)
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def nmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال عنوان IP أو المضيف\n💡 استخدام: `/nmap 192.168.1.1`", parse_mode='Markdown')
         return
     
     target = context.args[0]
-    await increment_command("nmap")
+    increment_command("nmap")
     msg = await update.message.reply_text(f"🔍 جاري مسح Nmap: `{target}`...\n⏳ قد يستغرق بعض الوقت...", parse_mode='Markdown')
     
     result = await nmap_scan(target, 'basic')
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def nmap_aggressive_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
-    if await is_banned(update.effective_user.id): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
+    if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال عنوان IP\n💡 استخدام: `/nmapagg 192.168.1.1`", parse_mode='Markdown')
         return
     
     target = context.args[0]
-    await increment_command("nmapagg")
+    increment_command("nmapagg")
     msg = await update.message.reply_text(f"⚡ جاري مسح عدواني: `{target}`...\n⏳ قد يستغرق وقتاً طويلاً...", parse_mode='Markdown')
     
     result = await nmap_aggressive_scan(target)
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def sqlmap_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال رابط URL\n💡 استخدام: `/sqlmap https://example.com?id=1`", parse_mode='Markdown')
         return
     
     target_url = context.args[0]
-    await increment_command("sqlmap")
+    increment_command("sqlmap")
     msg = await update.message.reply_text(f"💾 جاري فحص SQLMap: `{target_url[:40]}...`\n⏳ قد يستغرق بعض الوقت...", parse_mode='Markdown')
     
     result = await sqlmap_scan(target_url)
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def sqlmap_deep_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
-    if await is_banned(update.effective_user.id): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
+    if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال رابط URL\n💡 استخدام: `/sqlmapdeep https://example.com`", parse_mode='Markdown')
         return
     
     target_url = context.args[0]
-    await increment_command("sqlmapdeep")
+    increment_command("sqlmapdeep")
     msg = await update.message.reply_text(f"🔍 جاري فحص عميق: `{target_url[:40]}...`\n⏳ هذا قد يستغرق وقتاً طويلاً جداً...", parse_mode='Markdown')
     
     result = await sqlmap_deep_scan(target_url)
@@ -1671,7 +1671,7 @@ async def bypass_ssl_pinning(decompile_dir):
     return False
 
 async def doh_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال النطاق\nمثال: `/doh example.com`", parse_mode='Markdown')
@@ -1684,7 +1684,7 @@ async def doh_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def ip_geo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال IP\nمثال: `/ipgeo 8.8.8.8`", parse_mode='Markdown')
@@ -1697,7 +1697,7 @@ async def ip_geo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def httpsec_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال الرابط\nمثال: `/httpsec example.com`", parse_mode='Markdown')
@@ -1710,7 +1710,7 @@ async def httpsec_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     
     try:
@@ -3469,7 +3469,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
 async def unshort_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال الرابط المختصر\nمثال: `/unshort bit.ly/xxx`", parse_mode='Markdown')
@@ -3483,7 +3483,7 @@ async def unshort_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown', disable_web_page_preview=True)
 
 async def shodan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال عنوان IP\nمثال: `/shodan 8.8.8.8`", parse_mode='Markdown')
@@ -3496,7 +3496,7 @@ async def shodan_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def darkweb_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال الإيميل أو اسم المستخدم للفحص\nمثال: `/darkweb example@gmail.com`", parse_mode='Markdown')
@@ -3509,7 +3509,7 @@ async def darkweb_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def darkweb_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال الإيميل أو اسم المستخدم للفحص\nمثال: `/darkweb example@gmail.com`", parse_mode='Markdown')
@@ -3522,7 +3522,7 @@ async def darkweb_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await msg.edit_text(result, parse_mode='Markdown')
 
 async def censys_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await check_subscription(update, context): return
+    if not await check_subscription(context.bot, update.effective_user.id): return
     if is_banned(update.effective_user.id): return
     if not context.args:
         await update.message.reply_text("❌ يرجى إدخال IP أو دومين\nمثال: `/censys 1.1.1.1`", parse_mode='Markdown')
