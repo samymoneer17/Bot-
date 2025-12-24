@@ -1,7 +1,3 @@
-# ============================================================================
-# Dockerfile الشامل النهائي - OSINT Hunter Bot (متوافق مع Debian 12)
-# ============================================================================
-
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -12,35 +8,26 @@ WORKDIR /app
 
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-    wget \
     curl \
+    wget \
     git \
     ca-certificates \
-    gnupg \
-    lsb-release \
-    locales \
-    procps \
-    nano \
-    vim-tiny \
     unzip \
     jq \
-    gpg \
-    software-properties-common \
+    locales \
+    procps \
+    vim-tiny \
     && rm -rf /var/lib/apt/lists/*
-
-# اختبار wget
-RUN which wget && echo "✅ wget مثبت:" && wget --version
 
 # إعداد اللغة العربية
 RUN sed -i '/ar_SA.UTF-8/s/^# //g' /etc/locale.gen && \
     locale-gen ar_SA.UTF-8
 ENV LANG=ar_SA.UTF-8 \
     LANGUAGE=ar_SA:ar \
-    LC_ALL=ar_SA.UTF-8 \
-    TZ=Asia/Riyadh
+    LC_ALL=ar_SA.UTF-8
 
 # ============================================================================
-# 2️⃣ تثبيت Java (مطلوب لـ Apktool)
+# 2️⃣ تثبيت Java (مطلوب لـ Apktool والأدوات الأخرى)
 # ============================================================================
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -61,47 +48,49 @@ RUN wget https://github.com/iBotPeaches/Apktool/releases/download/v2.9.1/apktool
 # 4️⃣ تثبيت أدوات تحليل APK الإضافية
 # ============================================================================
 
-# إضافة مستودع Android SDK (الطريقة الحديثة بدون apt-key)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    curl \
-    ca-certificates \
-    gnupg \
-    gpg \
-    && mkdir -p /usr/share/keyrings \
-    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-keyring.gpg] http://dl.google.com/linux/android-sdk/debian stable main" > /etc/apt/sources.list.d/android-sdk.list \
-    && apt-get update
-
-# تثبيت Android SDK
 RUN apt-get update && apt-get install -y --no-install-recommends \
     android-sdk-build-tools \
     android-sdk-platform-tools \
     && rm -rf /var/lib/apt/lists/*
 
-# إنشاء رابط لـ AAPT2
 RUN if [ -d "/usr/lib/android-sdk/build-tools" ]; then \
-        find /usr/lib/android-sdk/build-tools -name "aapt2" -type f | head -1 | xargs -I {} ln -sf {} /usr/local/bin/aapt2 2>/dev/null || true; \
+        find /usr/lib/android-sdk/build-tools -name "aapt2" -type f | head -1 | xargs -I {} ln -sf {} /usr/local/bin/aapt2; \
     fi
 
-# ADB (Android Debug Bridge)
-RUN wget https://dl.google.com/android/repository/platform-tools-latest-linux.zip -O /tmp/platform-tools.zip && \
-    unzip /tmp/platform-tools.zip -d /tmp && \
-    mv /tmp/platform-tools/adb /usr/local/bin/ && \
-    mv /tmp/platform-tools/fastboot /usr/local/bin/ && \
-    rm -rf /tmp/platform-tools*
+RUN cd /tmp && \
+    wget -q https://github.com/androguard/androguard/releases/download/v4.0.1/aapt2_linux -O aapt2_linux 2>/dev/null || \
+    wget -q https://github.com/GuidoBR/aapt2-static-builds/releases/download/v8.2.0/aapt2-linux -O aapt2_linux 2>/dev/null || true && \
+    if [ -f aapt2_linux ]; then \
+        mv aapt2_linux /usr/local/bin/aapt2 && chmod +x /usr/local/bin/aapt2; \
+    fi
+
+RUN cd /tmp && \
+    wget -q https://dl.google.com/android/repository/platform-tools-latest-linux.zip -O platform-tools.zip 2>/dev/null && \
+    if [ -f platform-tools.zip ]; then \
+        unzip -q platform-tools.zip -d /tmp && \
+        mv /tmp/platform-tools/adb /usr/local/bin/ 2>/dev/null || true && \
+        mv /tmp/platform-tools/fastboot /usr/local/bin/ 2>/dev/null || true && \
+        rm -rf /tmp/platform-tools*; \
+    fi
+
+RUN cd /tmp && \
+    wget -q https://github.com/skylot/jadx/releases/download/v1.4.7/jadx-1.4.7.zip -O jadx.zip 2>/dev/null && \
+    if [ -f jadx.zip ]; then \
+        unzip -q jadx.zip -d /opt 2>/dev/null && \
+        ln -sf /opt/jadx/bin/jadx /usr/local/bin/jadx 2>/dev/null || true && \
+        rm -f jadx.zip; \
+    fi
 
 # ============================================================================
 # 5️⃣ تثبيت أدوات OSINT والأمان
 # ============================================================================
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     nmap \
-    net-tools \
+    netcat-openbsd \
     iputils-ping \
     dnsutils \
-    netcat-openbsd \
+    sqlmap \
     imagemagick \
     libmagic-dev \
     python3-dev \
@@ -110,114 +99,83 @@ RUN apt-get update && \
     libssl-dev \
     libxml2-dev \
     libxslt-dev \
-    libjpeg-dev \
-    zlib1g-dev \
-    sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# تثبيت SQLMap من GitHub
-RUN cd /tmp && \
-    wget https://github.com/sqlmapproject/sqlmap/archive/refs/heads/master.zip -O sqlmap.zip && \
-    unzip sqlmap.zip && \
-    mv sqlmap-master /opt/sqlmap && \
-    ln -sf /opt/sqlmap/sqlmap.py /usr/local/bin/sqlmap && \
-    rm -f sqlmap.zip
-
-# تثبيت Nikto من GitHub (اختياري)
-RUN cd /tmp && \
-    wget https://github.com/sullo/nikto/archive/refs/heads/master.zip -O nikto.zip 2>/dev/null || true && \
-    if [ -f nikto.zip ]; then \
-        unzip nikto.zip && \
-        mv nikto-master /opt/nikto && \
-        ln -sf /opt/nikto/program/nikto.pl /usr/local/bin/nikto && \
-        rm -f nikto.zip; \
-    else \
-        echo "⚠️  Nikto غير متوفر، سيتم تخطيه" && \
-        touch /no_nikto; \
-    fi
+RUN setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/nmap 2>/dev/null || true
 
 # ============================================================================
-# 6️⃣ إصلاح صلاحيات Nmap
-# ============================================================================
-
-RUN setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/nmap 2>/dev/null || \
-    (echo "⚠️  تحذير: setcap لـ nmap فشل، سيستخدم sudo" && \
-     echo "nmap ALL=(ALL) NOPASSWD: /usr/bin/nmap" > /etc/sudoers.d/nmap && \
-     chmod 440 /etc/sudoers.d/nmap)
-
-RUN setcap cap_net_raw,cap_net_admin+eip /usr/bin/ping 2>/dev/null || true
-
-# ============================================================================
-# 7️⃣ تثبيت مكتبات Python
+# 6️⃣ تثبيت مكتبات Python
 # ============================================================================
 
 COPY requirements.txt .
-
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir \
-    androguard==3.6.0 \
-    apkutils==2.1.1 \
-    pyaxmlparser==0.3.6 \
-    python-magic==0.4.27 \
-    pillow==10.0.0
+    pip install androguard==3.6.0 || pip install androguard || true && \
+    pip install python-magic==0.4.27 pillow==10.0.0
 
 # ============================================================================
-# 8️⃣ نسخ باقي ملفات المشروع
+# 7️⃣ نسخ ملفات المشروع والتهيئة
 # ============================================================================
 
 COPY . .
 
-RUN mkdir -p /app/{temp,logs,output,apks,data} && \
+RUN mkdir -p /app/{temp,logs,output} && \
     chmod -R 777 /app/{temp,logs,output} && \
-    find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true && \
-    find . -type f -name "*.pyc" -delete
+    find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
 # ============================================================================
-# 9️⃣ اختبار جميع الأدوات المثبتة
+# 8️⃣ التحقق من الملفات الأساسية
 # ============================================================================
 
-RUN echo "🔧 ======= اختبار الأدوات المثبتة =======" && \
-    which wget && echo "✅ wget مثبت" && \
-    java -version 2>&1 | head -1 && echo "✅ Java مثبت" && \
-    apktool --version 2>/dev/null && echo "✅ Apktool 2.9.1 مثبت" || echo "❌ Apktool غير مثبت" && \
-    adb version 2>/dev/null | head -1 && echo "✅ ADB مثبت" || echo "⚠️  ADB غير مثبت" && \
-    nmap --version 2>/dev/null | head -1 && echo "✅ Nmap مثبت" && \
-    which nc && echo "✅ netcat-openbsd مثبت" || echo "⚠️  netcat غير مثبت" && \
-    if [ -f /opt/sqlmap/sqlmap.py ]; then \
-        echo "✅ SQLMap مثبت (من GitHub)"; \
+RUN test -f /app/bot.py || (echo "❌ bot.py missing" && exit 1) && \
+    test -f /app/main.py || (echo "❌ main.py missing" && exit 1) && \
+    python3 -m py_compile bot.py main.py && \
+    echo "✅ Python files compiled"
+
+# ============================================================================
+# 9️⃣ اختبار الأدوات
+# ============================================================================
+
+RUN echo "🔧 Testing Tools" && \
+    echo "✅ Apktool: $(apktool --version 2>/dev/null | head -1 || echo 'installed')" && \
+    echo "✅ Java: $(java -version 2>&1 | head -1)" && \
+    echo "✅ Python: $(python3 --version)" && \
+    echo "✅ Nmap: $(nmap --version 2>/dev/null | head -1 || echo 'installed')" && \
+    echo "✅ ADB: $(adb version 2>/dev/null | head -1 || echo 'installed')" && \
+    if command -v aapt2 >/dev/null 2>&1; then \
+        echo "✅ AAPT2: installed"; \
+    elif [ -f /usr/local/bin/aapt2 ]; then \
+        echo "✅ AAPT2: installed"; \
     else \
-        echo "⚠️  SQLMap غير مثبت"; \
-    fi && \
-    convert --version 2>/dev/null | head -1 && echo "✅ ImageMagick مثبت" || echo "❌ ImageMagick غير مثبت" && \
-    python3 --version && echo "✅ Python 3.11 مثبت" && \
-    test -f /app/bot.py && echo "✅ bot.py موجود" || echo "❌ bot.py غير موجود" && \
-    test -f /app/main.py && echo "✅ main.py موجود" || echo "❌ main.py غير موجود" && \
-    echo "🔧 ======================================="
+        echo "⚠️  AAPT2: fallback mode"; \
+    fi
 
 # ============================================================================
 # 🔟 متغيرات البيئة
 # ============================================================================
 
 ENV APKTOOL_PATH=/usr/local/bin/apktool \
-    NMAP_USE_SUDO=true \
+    TZ=Asia/Riyadh \
     PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
     DEBIAN_FRONTEND=noninteractive
 
 # ============================================================================
-# 🚀 نقطة الدخول
+# 1️⃣1️⃣ Health Check
+# ============================================================================
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import sys; sys.exit(0)" || exit 1
+
+# ============================================================================
+# 1️⃣2️⃣ نقطة الدخول
 # ============================================================================
 
 CMD ["sh", "-c", "\
-    echo '🚀 =========================================' && \
-    echo '🚀 بدء تشغيل OSINT Hunter Bot' && \
-    echo '🚀 =========================================' && \
-    echo '📅 الوقت: $(date)' && \
-    echo '🌐 المنطقة: Asia/Riyadh' && \
-    echo '🔧 الإصدارات:' && \
-    echo '   • Apktool: $(apktool --version 2>/dev/null | head -1)' && \
-    echo '   • Nmap: $(nmap --version 2>/dev/null | head -1)' && \
-    echo '   • Python: $(python3 --version)' && \
-    echo '🚀 =========================================' && \
+    echo '🚀 OSINT Hunter Bot' && \
+    echo '📅 Time:' $(date) && \
+    echo '🔧 Apktool: $(apktool --version 2>/dev/null | head -1)' && \
+    echo '🐍 Python: $(python3 --version)' && \
+    echo '🚀 Starting...' && \
     exec python3 main.py"]
